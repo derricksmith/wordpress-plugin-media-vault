@@ -8,7 +8,31 @@
  * @author Max G J Panas <http://maxpanas.com/>
  * @license GPL-3.0+
  */
+ 
+ 
 
+/**
+ * Helper function to get attachment by name
+ *
+ * @since 0.8.13
+ *
+ * @param string $post_name Filename
+ */
+if( ! ( function_exists( 'mgjp_get_attachment_by_post_name' ) ) ) {
+    function mgjp_get_attachment_by_post_name( $post_name ) {
+        $args = array(
+            'posts_per_page' => 1,
+            'post_type'      => 'attachment',
+            'name'           => trim ( $post_name ),
+        );
+        $get_attachment = new WP_Query( $args );
+
+        if ( $get_attachment->posts[0] )
+            return $get_attachment->posts[0];
+        else
+          return false;
+    }
+}
 
 /**
  * Check if file with path $rel_file from WP uploads folder is in a Media Vault protected folder.
@@ -38,7 +62,7 @@ function mgjp_mv_get_file( $rel_file, $action = '' ) {
 
   if ( ! $upload_dir['basedir'] || ! is_file( $file ) ) {
     status_header( 404 );
-    wp_die( '404. File not found.' );
+    wp_die( '404. File not found. '.$upload_dir['basedir']." ".$file );
   }
 
   $mime = wp_check_filetype( $file ); // Check filetype against allowed filetypes
@@ -72,31 +96,15 @@ function mgjp_mv_get_file( $rel_file, $action = '' ) {
     //-------------------------------------------------------//
 
     // try and get attachment id from url -------------------//
-    global $wpdb;
-    $attachments = $wpdb->get_results(
-      $wpdb->prepare(
-        "
-        SELECT      post_id, meta_value
-        FROM        $wpdb->postmeta
-        WHERE       meta_key = %s
-                    AND meta_value LIKE %s
-        ",
-        '_wp_attachment_metadata',
-        '%' . $file_info['basename'] . '%'
-      ), ARRAY_A
-    );
-
-    $attachment_id = false;
-    foreach ( $attachments as $attachment ) {
-
-      $meta_value = unserialize( $attachment['meta_value'] );
-
-      if ( ltrim( dirname( $meta_value['file'] ), '/' ) == ltrim( $file_info['dirname'], '/' ) ) {
-        $attachment_id = $attachment['post_id'];
-        break;
-      }
-    }
-    // ------------------------------------------------------//
+	
+	$attachment = mgjp_get_attachment_by_post_name( $file_info['filename'] );
+	
+	if ( ! $attachment ){
+		status_header( 404 );
+		wp_die( '404. File not found. '.$upload_dir['basedir']." ".$file );
+	}
+	
+	$attachment_id = $attachment->ID;
 
     if ( ! $permission = mgjp_mv_get_the_permission( $attachment_id ) )
       $permission = get_option( 'mgjp_mv_default_permission', 'logged-in' );
@@ -141,41 +149,57 @@ function mgjp_mv_get_file( $rel_file, $action = '' ) {
 
   //-------------------------------------------------------------------//
 
-  header( 'Content-Type: ' . $mimetype ); // always send this
+  //header( 'Content-Type: ' . $mimetype ); // always send this
   if ( false === strpos( $_SERVER['SERVER_SOFTWARE'], 'Microsoft-IIS' ) )
     header( 'Content-Length: ' . filesize( $file ) );
-
   if ( 'safeforce' !== $action ) {
-    //--OPEN FILE IN BROWSER functions-------------//
+    //Force PDF Download
+	if ($mimetype !== "application/pdf"){
+		//--OPEN FILE IN BROWSER functions-------------//
+		header( 'Content-Type: application/octet-stream' );
+		$last_modified = gmdate( 'D, d M Y H:i:s', filemtime( $file ) );
+		$etag = '"' . md5( $last_modified ) . '"';
+		header( "Last-Modified: $last_modified GMT" );
+		header( 'ETag: ' . $etag );
+		header( 'Cache-Control: no-store, no-cache, must-revalidate' ); // HTTP 1.1.
+		header( 'Pragma: no-cache' ); // HTTP 1.0.
+		header( 'Expires: Thu, 01 Dec 1994 16:00:00 GMT' ); // Proxies
+		header( 'Content-Disposition: attachment; filename="' . $file_info['basename'] . '";' );
+		header( 'Content-Transfer-Encoding: binary' );
+		
+		// Support for Conditional GET
+		$client_etag = isset( $_SERVER['HTTP_IF_NONE_MATCH'] ) ? stripslashes( $_SERVER['HTTP_IF_NONE_MATCH'] ) : false;
 
-    $last_modified = gmdate( 'D, d M Y H:i:s', filemtime( $file ) );
-    $etag = '"' . md5( $last_modified ) . '"';
-    header( "Last-Modified: $last_modified GMT" );
-    header( 'ETag: ' . $etag );
-    header( 'Cache-Control: no-store, no-cache, must-revalidate' ); // HTTP 1.1.
-    header( 'Pragma: no-cache' ); // HTTP 1.0.
-    header( 'Expires: Thu, 01 Dec 1994 16:00:00 GMT' ); // Proxies
+		if( ! isset( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) )
+		  $_SERVER['HTTP_IF_MODIFIED_SINCE'] = false;
 
-    // Support for Conditional GET
-    $client_etag = isset( $_SERVER['HTTP_IF_NONE_MATCH'] ) ? stripslashes( $_SERVER['HTTP_IF_NONE_MATCH'] ) : false;
+		$client_last_modified = trim( $_SERVER['HTTP_IF_MODIFIED_SINCE'] );
+		// If string is empty, return 0. If not, attempt to parse into a timestamp
+		$client_modified_timestamp = $client_last_modified ? strtotime( $client_last_modified ) : 0;
 
-    if( ! isset( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) )
-      $_SERVER['HTTP_IF_MODIFIED_SINCE'] = false;
+		// Make a timestamp for our most recent modification...
+		$modified_timestamp = strtotime( $last_modified );
 
-    $client_last_modified = trim( $_SERVER['HTTP_IF_MODIFIED_SINCE'] );
-    // If string is empty, return 0. If not, attempt to parse into a timestamp
-    $client_modified_timestamp = $client_last_modified ? strtotime( $client_last_modified ) : 0;
+		if ( ( $client_last_modified && $client_etag )
+		  ? ( ( $client_modified_timestamp >= $modified_timestamp ) && ( $client_etag == $etag ) )
+		  : ( ( $client_modified_timestamp >= $modified_timestamp ) || ( $client_etag == $etag ) )
+		) {
+		  status_header( 304 );
+		  exit;
+		}
+	} else {
+		header( 'Content-Type: application/octet-stream' );
+		// required for IE, otherwise Content-disposition is ignored
+		if( ini_get( 'zlib.output_compression' ) )
+		  ini_set( 'zlib.output_compression', 'Off' );
 
-    // Make a timestamp for our most recent modification...
-    $modified_timestamp = strtotime( $last_modified );
-
-    if ( ( $client_last_modified && $client_etag )
-      ? ( ( $client_modified_timestamp >= $modified_timestamp ) && ( $client_etag == $etag ) )
-      : ( ( $client_modified_timestamp >= $modified_timestamp ) || ( $client_etag == $etag ) )
-    ) {
-      status_header( 304 );
-      exit;
-    }
+		header( 'Pragma: public' ); // required
+		header( 'Expires: 0' );
+		header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
+		header( 'Cache-Control: private', false ); // required for certain browsers
+		header( 'Content-Disposition: attachment; filename="' . $file_info['basename'] . '";' );
+		header( 'Content-Transfer-Encoding: binary' );
+	}
 
   } else {
   //--FORCE DOWNLOAD Functions-----------------------//
