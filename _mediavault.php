@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 // define current plugin version constant
-define( 'MGJP_MV_VERSION', '0.8.12' );
+define( 'MGJP_MV_VERSION', '0.8.13' );
 
 
 /**
