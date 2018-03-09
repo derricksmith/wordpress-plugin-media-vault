@@ -4,7 +4,7 @@ Donate Link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: media, security, protection, attachments, downloads, download links, powerful, shortcode, flexible, simple, uploads, images, multisite, files, links, private, documents
 Requires at least: 3.5.0
 Tested up to: 3.8.1
-Stable tag: 0.8.12
+Stable tag: 0.8.13
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -87,6 +87,9 @@ This question was recently asked and answered in [this support thread](https://w
 3. The WordPress Media Upload page with Media Vault file protection activated (in WP mp6 & WP 3.8+)
 
 == Changelog ==
+
+= 0.8.13 =
+* Fixed vulnerability in `mv-file-handler.php` allowing authenticated users access to other users files.
 
 = 0.8.12 =
 fixed bug in `mv-file-handler.php` causing php Notice and corrupted files. Big thanks to user [ikivanov](http://profiles.wordpress.org/ikivanov) for pointing it out and providing the solution!
