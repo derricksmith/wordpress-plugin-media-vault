@@ -57,6 +57,7 @@ if ( ! function_exists( 'mgjp_wp_relative_upload_path' ) ) {
  * @param $new_reldir string the new path to the attachment relative to the WP uploads directory
  * @return object | bool Returns WP_Error on failure and True on success
  */
+
 if ( ! function_exists( 'mgjp_move_attachment_files' ) ) {
   function mgjp_move_attachment_files( $attachment_id, $new_reldir ) {
 
@@ -108,9 +109,9 @@ if ( ! function_exists( 'mgjp_move_attachment_files' ) ) {
       ) );
 
 
-    // Get all filenames for all attached files
+    // If image! Get all filenames for all attached files
     $intermediate_sizes = array();
-    if ( is_array( $meta['sizes'] ) ) {
+    if (isset($meta['sizes']) && is_array( $meta['sizes'] ) ) {
       foreach ( $meta['sizes'] as $size ) {
         $intermediate_sizes[] = $size['file'];
       }
@@ -144,7 +145,7 @@ if ( ! function_exists( 'mgjp_move_attachment_files' ) ) {
 
     // prep for filename conflict script
     $orig_filename = pathinfo( $orig_basename );
-    $orig_filename = $orig_filename['filename'];
+    $orig_filename = $orig_filename['filename'];// filename without extension
     $conflict = true;
     $number = 1;
     $separator = '#';
@@ -206,11 +207,17 @@ if ( ! function_exists( 'mgjp_move_attachment_files' ) ) {
 
 
     // Update all attachment filepaths in database to point to the new location
-
     // $new_basenames[0] should always be the basename of the file
     // from '_wp_attached_media' with the new conflict free filename
+      if(!is_array($meta)){
+        $meta = array();
+      }
+      
     $meta['file'] = path_join( $new_reldir, $new_basenames[0] );
-    update_post_meta( $attachment_id, '_wp_attached_file', $meta['file'] );
+    
+    if(strlen($meta['file']) > 4){
+        update_post_meta( $attachment_id, '_wp_attached_file', $meta['file'] );
+    }
 
     // if $new_basenames != $old_basenames we must update the
     // original basename used in the guid as well as the metadata
@@ -248,11 +255,20 @@ if ( ! function_exists( 'mgjp_move_attachment_files' ) ) {
     }
 
     update_post_meta( $attachment_id, '_wp_attachment_metadata', $meta );
+    
+    // Save to find later instead of post_name
+    update_post_meta( $attachment_id, '_wp_attachment_filename', $orig_filename );
 
-    $guid = path_join( $new_fulldir, $orig_basename );                                // should I be updating the GUID? the Codex says I should
+    // should I be updating the GUID? the Codex says I should
+    $guid = path_join( $new_fulldir, $orig_basename );
+//    dd(array( 'ID' => $attachment_id, 'guid' => $guid, 'post_name' => $orig_filename ));
     // just in case someone wants to disable updating the guid:                       // for attachments.
-    if ( apply_filters( 'mgjp_update_guid_on_attachment_files_move', true ) )
-      wp_update_post( array( 'ID' => $attachment_id, 'guid' => $guid ) );
+    if ( apply_filters( 'mgjp_update_guid_on_attachment_files_move', true ) ){
+      wp_update_post( array(
+          'ID' => $attachment_id,
+          'guid' => $guid,
+      ) );
+    }
 
 
     // NOT IMPLEMENTED YET: If $rewrite_whole_db flag is set, sanely search through database for instances of 
