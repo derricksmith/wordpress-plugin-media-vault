@@ -84,5 +84,3 @@ function mgjp_mv_download_links_list_shortcode_handler( $atts ) {
 
   return ob_get_clean();
 }
-
-?>

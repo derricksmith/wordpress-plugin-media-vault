@@ -304,5 +304,3 @@ function wpst_mv_restrict_only_for_subscribers() {
 
   return false;
 }
-
-?>

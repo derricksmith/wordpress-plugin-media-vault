@@ -305,5 +305,3 @@ function mgjp_mv_options_media_enqueue_scripts() {
 
 }
 add_action( 'admin_enqueue_scripts', 'mgjp_mv_options_media_enqueue_scripts' );
-
-?>

@@ -249,5 +249,3 @@ function mgjp_mv_render_extra_activation_steps_page() {
 
   <?php
 }
-
-?>

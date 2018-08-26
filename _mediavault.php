@@ -1429,13 +1429,3 @@ function mgjp_mv_fix_meta_file($attachment_id)
         update_post_meta($attachment_id, '_wp_attached_file', $guid);
     }
 }
-
-add_action('admin_init', function () {
-    if (isset($_GET['debug']))
-    {
-        require_once(plugin_dir_path(__FILE__) . 'includes/mgjp-functions.php');
-        require_once(plugin_dir_path(__FILE__) . 'mv-file-handler.php');
-        dd(mgjp_get_attachment_by_post_name('palestra-flavia-sobreira'));
-        mgjp_move_attachment_files(14410, 'new_dir');
-    }
-}, 60);
