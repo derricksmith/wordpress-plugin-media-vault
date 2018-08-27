@@ -1,12 +1,14 @@
 === Media Vault ===
-Contributors: Max GJP
-Donate Link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=6KFT65LQXEHFQ
-Tags: media, security, protection, attachments, downloads, download links, powerful, shortcode, flexible, simple, uploads, images, multisite, files, links, private, documents
-Requires at least: 3.5.0
-Tested up to: 3.8.1
-Stable tag: 0.8.13
+Plugin Name: Media Vault (BB)
+Plugin URI: https://github.com/bruno-barros/wordpress-plugin-media-vault
+Description: Protect attachment files from direct access using powerful and flexible restrictions. Offer safe download links for any file in your uploads folder.
+Network: true
+Text Domain: media-vault
+Domain Path: /languages
+Version: 0.9.0
+Author: Bruno Barros
+Author URI: http://maxpanas.com
 License: GPLv3 or later
-License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
 Protect attachment files from direct access using powerful and flexible restrictions. Offer safe download links for any file in your uploads folder.
 
@@ -87,6 +89,12 @@ This question was recently asked and answered in [this support thread](https://w
 3. The WordPress Media Upload page with Media Vault file protection activated (in WP mp6 & WP 3.8+)
 
 == Changelog ==
+
+= 0.9.0 =
+* Fixed $meta array could me string and breaks file name.
+* On mgjp_get_attachment_by_post_name() the way it finds the attachment based on the filename is totally unsure if you apply a filter when process upload. Now stores a metadata '_wp_attachment_filename' to match the filename and fallback to the previous behavior.
+* Remove closing PHP tag to prevent to send unexpected data to the browser.
+* On media popup, when changing the secure rule updates the URL dynamically.
 
 = 0.8.13 =
 * Fixed vulnerability in `mv-file-handler.php` allowing authenticated users access to other users files.
