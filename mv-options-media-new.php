@@ -135,5 +135,3 @@ function mgjp_mv_render_media_new_options_message_box() {
   <?php endif;
 }
 add_action( 'pre-plupload-upload-ui', 'mgjp_mv_render_media_new_options_message_box' );
-
-?>

@@ -196,6 +196,3 @@ class MGJP_MV_Update {
   }
 
 } // END of class MGJP_MV_Update
-
-
-?>

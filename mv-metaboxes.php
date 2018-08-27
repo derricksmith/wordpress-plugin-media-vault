@@ -174,5 +174,3 @@ function mgjp_mv_save_attachment_metabox_data( $attachment_id ) {
   }
 }
 add_action( 'edit_attachment', 'mgjp_mv_save_attachment_metabox_data' );
-
-?>
